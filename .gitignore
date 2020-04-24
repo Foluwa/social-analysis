@@ -1,6 +1,6 @@
 .idea
 .ipynb_checkpoints
 venv
-keys.json
-sample-tweet.json
 data.json
+.env
+.pyc

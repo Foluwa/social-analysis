@@ -26,6 +26,7 @@ then
 | Routes      | Description          | Response  |
 | ------------- |:-------------:| -----:|
 | /             | home route | json  |
+| /    | perform real-time analysis on tweets with sockets    |  negative, positive, neutral,  |
 | /v1/api/analyse     | perform analysis on tweets     |  negative, positive, neutral,  |
 |  |      |    |
 
