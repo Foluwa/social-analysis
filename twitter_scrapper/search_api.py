@@ -116,7 +116,7 @@ class TwitterStreamListner:
                     raise TypeError("Unknown type")
 
                 tweet_date = json.dumps(tweet.created_at, default=datetime_handler)
-                # collecttweet = {}
+               
                 collecttweet = {
                     'tweet_date': tweet_date,
                     'tweet_userid': tweet.id,

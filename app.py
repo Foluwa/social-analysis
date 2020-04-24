@@ -92,7 +92,7 @@ def get_collection_names():
 @app.route('/get-previous-values/<string:collection_name>/')
 def previous_searches(collection_name):
     print('ID IS >>> ' + collection_name)
-    # myclient = pymongo.MongoClient(credentials.MONGODB_ADDON_URI)
+    myclient = pymongo.MongoClient(credentials.MONGODB_ADDON_URI)
     db_name = 'sentiment_analysis_results'
     # Database configurations
     db = myclient[db_name]
