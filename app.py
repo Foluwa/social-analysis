@@ -8,11 +8,10 @@ import eventlet
 eventlet.monkey_patch()
 from flask import Flask, request, jsonify
 from flask_socketio import SocketIO
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 # Twitter credentials
 import credentials
 import pymongo
-import requests
 # search api
 from twitter_scrapper.search_api import TwitterStreamListner
 twitter_search_api = TwitterStreamListner()
