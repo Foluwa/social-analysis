@@ -1,7 +1,6 @@
 """
     Database connection
 """
-
 import pymongo
 import credentials
 
@@ -15,3 +14,4 @@ def database_connection():
         return 'Connection Successful'
     finally:
         print('Connection not successful')
+

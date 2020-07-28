@@ -2,126 +2,113 @@
     Implemented Twitter Streaming API
     https://developer.twitter.com/en/docs/tutorials/consuming-streaming-data
 """
-import eventlet
-eventlet.monkey_patch()
 try:
     from __main__ import socketio, credentials
     import credentials
 except ImportError:
     from app import socketio
-
 import credentials
-import re
 import json
 import pandas as pd
-from tweepy import Stream
-from tweepy.streaming import StreamListener
-from tweepy import OAuthHandler
+import logging
+from tweepy import OAuthHandler, Stream, StreamListener
 from collections import Counter
 from textblob import TextBlob
+from .process_tweets import CommonMethods
 
-from words import stop_words
-
+common_methods = CommonMethods()
 # Enter Twitter API Keys
 access_token = credentials.ACCESS_TOKEN
 access_token_secret = credentials.ACCESS_TOKEN_SECRET
 consumer_key = credentials.CONSUMER_KEY
 consumer_secret = credentials.CONSUMER_SECRET
 
-# Initialize Global variable
-tweet_count = 0
-# Input number of tweets to be downloaded
-n_tweets = 300000
+all_tweets_dataframe = None
+
 
 # Create the class that will handle the tweet stream
 class StdOutListener(StreamListener):
+    """
+        the __init__ method initialises the class and makes it possible to call the get_search_query method
+        with the search keywords
+    """
 
-    def clean_tweet(self, tweet):
-        # process the tweets
-        # Convert to lower case
-        tweet = tweet.lower()
-        # Remove www.* or https?://*
-        tweet = re.sub('((www\.[^\s]+)|(https?://[^\s]+))', '', tweet)
-        # Remove @username
-        tweet = re.sub('@[^\s]+', '', tweet)
-        # Remove additional white spaces
-        tweet = re.sub('[\s]+', ' ', tweet)
-        # Replace #word with word
-        tweet = re.sub(r'#([^\s]+)', r'\1', tweet)
-        # Replace none english characters with nothing
-        tweet = re.sub(r'[^a-zA-Z ]', '', tweet)  # Make sure there is a space after Z
-        # tweet = list(map(lambda st: str.replace(st, "rt", ""), tweet))
-        # trim
-        tweet = tweet.strip('\'"')
-        # # split the tweets to a list
-        tweet = [word for word in tweet.split() if word not in stop_words]
-        # convert list to sentence
-        tweet_text = ' '.join(word for word in tweet)
-        return tweet, tweet_text
+    def __init__(self):
+        # declare pandas dataframe
+        super(StdOutListener, self).__init__()
+        # global all_tweets_dataframe
+        self.all_tweets_dataframe = pd.DataFrame({"cleaned_tweets": []})
+
+    """
+        the on_data method streams tweets in realtime, the method is from the tweepy module
+    """
 
     def on_data(self, data):
+        # Load streamed data into JSON format
         json_data = json.loads(data)
+
+        # Reassigning variables to streamed data
+        created_at = json_data['created_at']
+        text = json_data['text']
+        user = text = json_data['user']['screen_name']
+
+        # Tweet Cleaning: Calls method on tweet  to remove non-english characters and stopwords from tweet
+        tweet_text, pd_text = common_methods.clean_tweet(json_data['text'])
+
+        # Assign cleaned tweets to a dataframe
+        tweet_dataframe = pd.DataFrame({'cleaned_tweets': pd_text})
+
         try:
-            global tweet_count
-            global n_tweets
-            global stream
+            # Analyse retrieved tweet with Textblob sentiment
+            tweet_details = TextBlob(tweet_text)
+            logging.info('Tweet details is : ', tweet_details, tweet_details.polarity, tweet_details.subjectivity)
 
-            # declare pandas dataframe
-            all_tweets_dataframe = pd.DataFrame({"cleaned_tweets": []})
-            if tweet_count < n_tweets:
-                tweet_count += 1
-                created_at = json_data['created_at']
-                text = json_data['text']
-                user = text = json_data['user']['screen_name']
-                pd_text, tweet_text = self.clean_tweet(json_data['text'])
-                # Assign cleaned tweets to the tweet dataframe
-                tweet_dataframe = pd.DataFrame({'cleaned_tweets': pd_text})
-                # Analyse sentiment
-                tweet_details = TextBlob(tweet_text)
-                '''
-                    https://textblob.readthedocs.io/en/dev/quickstart.html#sentiment-analysis
-                    Subjective sentences generally refer to personal opinion, emotion or judgment
-                    Objective refers to factual information.
-                '''
-                if tweet_details.polarity > 0:
-                    sentiment = 'POSITIVE'
-                elif tweet_details.polarity == 0:
-                    sentiment = 'NEUTRAL'
-                elif tweet_details.polarity < 0:
-                    sentiment = 'NEGATIVE'
-                # Append current cleaned tweets to all tweet dataframe
-                all_tweets_dataframe = all_tweets_dataframe.append(tweet_dataframe)
+            """
+                https://textblob.readthedocs.io/en/dev/quickstart.html#sentiment-analysis
+                Subjective sentences generally refer to personal opinion, emotion or judgment
+                Objective refers to factual information.
+            """
+            if tweet_details.polarity > 0:
+                sentiment = 'POSITIVE'
+            elif tweet_details.polarity == 0:
+                sentiment = 'NEUTRAL'
+            elif tweet_details.polarity < 0:
+                sentiment = 'NEGATIVE'
 
-                # Count the most occuring words and load them into arrays
-                most_occurring_words = Counter(" ".join(all_tweets_dataframe['cleaned_tweets']).split()).most_common(10)
-                popular_words = [i[0] for i in most_occurring_words]
-                popular_nums = [j[1] for j in most_occurring_words]
+            # Concatenate the all_tweets_dataframe with the single retrieved tweets dataframe
+            self.all_tweets_dataframe = pd.concat([self.all_tweets_dataframe, tweet_dataframe], ignore_index=True)
 
-                # Emit response message
-                socketio.emit('responseMessage', {'data': text, 'sentiment': sentiment,
-                                                  'tweet_polarity': tweet_details.polarity,
-                                                  'tweet_text': json_data['text'],
-                                                  'created_at': json_data['created_at'],
-                                                  'popular_words': popular_words,
-                                                  'popular_nums': popular_nums
-                                                  }, broadcast=True)
-            else:
-                stream.disconnect()
-                socketio.emit("responseMessage", {"data": "STREAM DISCONNECTED!!"})
+            # Count the most occurring words and load them into arrays
+            most_occurring_words = Counter(" ".join(self.all_tweets_dataframe['cleaned_tweets']).split()).most_common(
+                15)
+            popular_words = [i[0] for i in most_occurring_words]
+            popular_nums = [j[1] for j in most_occurring_words]
+
+            # Use socket to emit processed data to client
+            socketio.emit('response', {
+                'data': text, 'sentiment': sentiment, 'tweet_polarity': tweet_details.polarity,
+                'tweet_text': json_data['text'], 'created_at': created_at,
+                'popular_words': popular_words, 'popular_nums': popular_nums
+            }, broadcast=True)
         except BaseException:
             # Error encountered
+            socketio.sleep(0)
             pass
 
-    def on_error(self, status_code):
-        if status_code == 420:
-            # returning False in on_data disconnects the stream
-            return False
+    """
+        the on_error method
+    """
 
-    # Handles Twitter authentication and the connection to Twitter Streaming API
+    def on_error(self, status):
+        logging.info('Status : ', status)
+
+    """
+        Handles Twitter authentication and the connection to Twitter Streaming API
+    """
+
     def get_search_query(self, search_query):
-        print('Data received is ', search_query)
         l = StdOutListener()
         auth = OAuthHandler(consumer_key, consumer_secret)
         auth.set_access_token(access_token, access_token_secret)
         stream = Stream(auth, l)
-        stream.filter(track=search_query)
+        stream.filter(track=[search_query], languages=['en'])

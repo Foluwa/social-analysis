@@ -1,4 +1,8 @@
-stop_words = ['rt', 'https', 'https://', '@', '#', 'nt', 't.co/', '.', ':', '?',
+"""
+    Stop words for twitter analysis
+"""
+
+stop_words = ['rt', 'http', 'https', 'https://', '@', '#', 'nt', 't.co/', '.', ':', '?',
               'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves',
               'you', 'your', 'yours', 'yourself', 'yourselves', 'he', 'him',
               'his', 'himself', 'she', 'her', 'hers', 'herself', 'it', 'its',
@@ -14,7 +18,8 @@ stop_words = ['rt', 'https', 'https://', '@', '#', 'nt', 't.co/', '.', ':', '?',
               'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not',
               'only', 'own', 'same', 'so', 'than', 'too', 'to', 'very', 's', 'can',
               'will', 'just', 'don', 'should', 'now', 'na', 'im', 'say' 'kkkkkkkkkkkkk', '...', 'whats',
-              'un', 'en', 'twittermoments', 'amp', 'retweet', 'q', '—————————————', '-', '_', "em", "re", "isnt", "wan",
-              "like", "m", "'ve", "bec", "n", "twt", "kca", "c", "a",
-              "b", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o",
-              "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
+              'un', 'en', 'twittermoments', 'amp', 'go', 'tweet', 'lol', 'oh', 'retweet', 'retweets', 'q',
+              '—————————————', '-', '_', 'em', 're', 'isnt', 'wan', 'ti', 'tl',
+              'like', 've', 'twt', 'kca', 'c', 'a',
+              'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
+              'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']

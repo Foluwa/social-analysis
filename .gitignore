@@ -3,4 +3,5 @@
 venv
 data.json
 .env
-.pyc
+*.pyc
+.vscode
