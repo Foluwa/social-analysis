@@ -294,4 +294,4 @@ def youtube_video_info(video_id):
 
 
 if __name__ == '__main__':
-    socketio.run(app)
+    socketio.run(app, debug=True)
