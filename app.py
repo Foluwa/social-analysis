@@ -34,8 +34,9 @@ app = Flask(__name__)
 # logging.basicConfig(filename='logs.log', level=logging.DEBUG)
 
 app.config['SECRET_KEY'] = credentials.SECRET_KEY
+app.config['CORS_HEADERS'] = 'Content-Type'
 # socketio = SocketIO(app, engineio_logger=True, cors_allowed_origins='*')
-socketio = SocketIO(app=app, cors_allowed_origins='*')
+socketio = SocketIO(app, cors_allowed_origins='*')
 # Enable CORS on all routes
 CORS(app, supports_credentials=True)
 
@@ -293,4 +294,4 @@ def youtube_video_info(video_id):
 
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    socketio.run(app)
