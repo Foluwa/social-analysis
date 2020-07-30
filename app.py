@@ -39,6 +39,7 @@ socketio = SocketIO(app=app, cors_allowed_origins='*')
 # Enable CORS on all routes
 CORS(app, supports_credentials=True)
 
+
 try:
     # Database configuration
     myclient = pymongo.MongoClient(credentials.DB_CONNECTION)
